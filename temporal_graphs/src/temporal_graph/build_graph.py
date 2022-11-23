@@ -10,7 +10,7 @@ def create_torch_temporal_graph_from_df(graph, save=True, path_prefix=""):
     features = np.random.rand(len(nodes), 4)
 
     data = HeteroData()
-    data.node_stores[0].x = torch.tensor(features, dtype=torch.float)
+    data["node"].x = torch.tensor(features, dtype=torch.float)
     for i, date_group in enumerate(np.sort(graph["date_group"].unique())):
         data["node", f"in_date_group_{date_group}", "node"].edge_index = torch.tensor(
             np.array([graph[graph["date_group"] == date_group]["node_1"].values,
