@@ -131,3 +131,4 @@ dmypy.json
 data/intermediate
 data/processed
 data/raw
+temporal_graphs/models
