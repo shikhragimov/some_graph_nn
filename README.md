@@ -2,7 +2,7 @@
 In the future, here will be research of a graph neural networks. 
 Currently temporal graphs
 
-* [Temporal Graphs](temporal_graphs)
+* [Temporal Graphs](temporal_graphs) - Readme
   * [Temporal Graphs](reports/TemporalGraphs.md) - about
   * [Data Section](reports/Data.md)
 
