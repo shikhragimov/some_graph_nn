@@ -11,6 +11,7 @@ Currently temporal graphs
 # TODO
 * Add real data
 * Add supervised part
+* Better documentation + visualization of idea
 * Add validation pipeline
 * Add tensorboard
 * Rewrite in tensorflow
