@@ -93,9 +93,9 @@ class DMGI(torch.nn.Module):
 
     def loss(self, pos_hs, neg_hs, summaries) -> torch.Tensor:
         """
-
-        :param pos_hs:
-        :param neg_hs:
+        loss function
+        :param pos_hs: positive representations of graph for different relation types after encoding
+        :param neg_hs: corrupted representations of graph for different relation types after encoding
         :param summaries:
         :return:
         """
