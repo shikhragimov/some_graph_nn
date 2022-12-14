@@ -32,10 +32,10 @@ class DMGI(torch.nn.Module):
         self.convs = torch.nn.ModuleList()
         self.conv_name = conv_name
         self.setup_conv_layers(self.conv_name)
-        self.M = torch.nn.Bilinear(self.out_channels, self.out_channels, 1)
+        self.M = torch.nn.Bilinear(self.out_channels, self.out_channels, 1)  # a trainable scoring matrix
         self.Z = torch.nn.Parameter(
             torch.rand(self.num_nodes, self.out_channels, dtype=torch.float)
-        )  # consensus embedding matrix
+        )  # a trainable consensus embedding matrix
         self.reset_parameters()
 
     def setup_conv_layers(self, conv_name) -> None:
