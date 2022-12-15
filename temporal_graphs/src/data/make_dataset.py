@@ -39,7 +39,6 @@ def add_date_group(df: pd.DataFrame,
     date_ranges = [[min_date_time + relativedelta(months=offset * i),
                     min_date_time + relativedelta(months=offset * i + window)]
                    for i in range(number_of_windows * window)]
-    print(date_ranges)
     df["date_group"] = None
     df["date_group"] = df["date_group"].apply(lambda x: [])
     for i, date_range in enumerate(date_ranges):
