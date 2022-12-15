@@ -26,7 +26,7 @@ def add_date_group(df: pd.DataFrame,
     Add date groups to dataframe
     :param df: (pd.DataFrame)
     :param date_column: (str) - column where is a date (assuming is in this format 2017-04-30 16:41:53)
-    :param date_is_string: (bool) whether the date is string
+     :param date_is_string: (bool) whether the date is string
     :param window: (int) size of window
     :param offset: (int) size of offset (the next window will begin (previous window start + offset)
     :param number_of_windows: (int) number of windows
@@ -39,8 +39,13 @@ def add_date_group(df: pd.DataFrame,
     date_ranges = [[min_date_time + relativedelta(months=offset * i),
                     min_date_time + relativedelta(months=offset * i + window)]
                    for i in range(number_of_windows * window)]
+    print(date_ranges)
     df["date_group"] = None
+    df["date_group"] = df["date_group"].apply(lambda x: [])
     for i, date_range in enumerate(date_ranges):
         df.loc[(df[date_column] >= date_range[0]) &
-               (df[date_column] <= date_range[1]), "date_group"] = i
+               (df[date_column] <= date_range[1]), "date_group"] = \
+            df.loc[(df[date_column] >= date_range[0]) &
+                   (df[date_column] <= date_range[1]), "date_group"].apply(lambda x: x + [i])
+    df = df.explode("date_group")
     return df
