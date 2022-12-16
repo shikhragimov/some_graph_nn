@@ -14,7 +14,12 @@ class DMGI(torch.nn.Module):
     """
 
     def __init__(
-        self, num_nodes: int, in_channels: int, out_channels: int, number_of_relations: int, conv_name: str,
+        self, num_nodes: int,
+            in_channels: int,
+            out_channels: int,
+            number_of_relations: int,
+            conv_name: str,
+            alpha: float = 0.0001
     ) -> None:
         """
         Sets up parameters for DMGI model
@@ -36,6 +41,7 @@ class DMGI(torch.nn.Module):
         self.Z = torch.nn.Parameter(
             torch.rand(self.num_nodes, self.out_channels, dtype=torch.float)
         )  # a trainable consensus embedding matrix
+        self.alpha = alpha
         self.reset_parameters()
 
     def setup_conv_layers(self, conv_name) -> None:
@@ -44,6 +50,8 @@ class DMGI(torch.nn.Module):
         """
         for _ in range(self.number_of_relations):
             self.convs.append(type_of_conv[conv_name](self.in_channels, self.out_channels))
+        print(self.in_channels)
+        print(self.out_channels)
 
     def reset_parameters(self) -> None:
         """
@@ -78,20 +86,20 @@ class DMGI(torch.nn.Module):
         pos_hs, neg_hs, summaries = [], [], []
 
         for conv, e_index in zip(self.convs, edge_index):
-            # original network
             pos_h = torch.nn.functional.dropout(x, p=dropout_probability, training=self.training)
             pos_h = DMGI.get_h(conv, pos_h, e_index)
             pos_hs.append(pos_h)
-            summaries.append(pos_h.mean(dim=0, keepdim=True))
 
-            # corrupted node_embeddings
+            summaries.append(torch.sigmoid(pos_h.mean(dim=0, keepdim=True)))  # readout
+
+            # corrupted network
             neg_h = torch.nn.functional.dropout(x, p=dropout_probability, training=self.training)
             neg_h = neg_h[torch.randperm(neg_h.size(0), device=neg_h.device)]
             neg_hs.append(DMGI.get_h(conv, neg_h, e_index))
 
         return pos_hs, neg_hs, summaries
 
-    def loss(self, pos_hs, neg_hs, summaries) -> torch.Tensor:
+    def loss(self, pos_hs, neg_hs, summaries) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         loss function
         :param pos_hs: positive representations of graph for different relation types after encoding
@@ -99,18 +107,25 @@ class DMGI(torch.nn.Module):
         :param summaries:
         :return:
         """
-        loss = torch.tensor([0.0])
-
-        for pos_h, neg_h, summary in zip(pos_hs, neg_hs, summaries):
+        # relation-type specific cross entropy
+        loss_rel = torch.tensor([0.0])  # relation type loss
+        for pos_h, neg_h, summary in zip(pos_hs, neg_hs, summaries):  # iterations per relation type
             summary = summary.expand_as(pos_h)
-            loss += -torch.log(self.M(pos_h, summary).sigmoid() + 1e-15).mean()
-            loss += -torch.log(1 - self.M(neg_h, summary).sigmoid() + 1e-15).mean()
 
+            loss_rel += -torch.log(torch.sigmoid(self.M(pos_h, summary)) + 1e-15).mean()
+            loss_rel += -torch.log(1 - torch.sigmoid(self.M(neg_h, summary)) + 1e-15).mean()
+            break
+
+        # aggregation
         pos_mean = torch.stack(pos_hs, dim=0).mean(dim=0)
         neg_mean = torch.stack(neg_hs, dim=0).mean(dim=0)
 
+        # consensus regularisation
         pos_reg_loss = (self.Z - pos_mean).pow(2).sum()
         neg_reg_loss = (self.Z - neg_mean).pow(2).sum()
-        loss += 0.001 * (pos_reg_loss - neg_reg_loss)
+        loss_cr = self.alpha * (pos_reg_loss - neg_reg_loss)
 
-        return loss
+        # return torch.sigmoid(self.M(pos_h, summary)).mean(),
+        # 1-torch.sigmoid(self.M(neg_h, summary)).mean(), loss_rel+loss_cr
+
+        return loss_rel, loss_cr, loss_rel+loss_cr
