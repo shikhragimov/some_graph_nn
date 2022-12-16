@@ -47,4 +47,5 @@ def add_date_group(df: pd.DataFrame,
             df.loc[(df[date_column] >= date_range[0]) &
                    (df[date_column] <= date_range[1]), "date_group"].apply(lambda x: x + [i])
     df = df.explode("date_group")
+    df["date_group"] = df["date_group"].apply(int)
     return df
