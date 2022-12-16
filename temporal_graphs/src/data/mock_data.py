@@ -17,4 +17,4 @@ def get_temporal_mock_graph():
             np.random.randint(20, size=100),
             np.random.randint(20, 40, size=100),
             np.random.randint(40, 60, size=100)]),
-        "date_group": np.random.randint(1, size=300)})
+        "date_group": np.random.randint(5, size=300)})
