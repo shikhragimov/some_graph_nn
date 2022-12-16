@@ -9,9 +9,11 @@ Currently temporal graphs
 
 
 # TODO
-* Add real data
+* Add pretrain step (inference on first initialized parameters)
 * Add supervised part
 * Better documentation + visualization of idea
 * Add validation pipeline
 * Add tensorboard
 * Rewrite in tensorflow
+* add DMGI+
+* add metrics
