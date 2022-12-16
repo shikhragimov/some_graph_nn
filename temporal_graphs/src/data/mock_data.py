@@ -5,7 +5,6 @@ import numpy as np
 def get_temporal_mock_graph():
     """
     Create temporal graph
-    TODO: add options to create not random graph
     :return:
         pd.DataFrame
     """
