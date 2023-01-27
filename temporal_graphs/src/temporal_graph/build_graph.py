@@ -7,7 +7,6 @@ def create_torch_temporal_graph_from_df(graph, save=True, path_prefix="", featur
     nodes = set(graph["node_1"].unique())
     nodes.update(set(graph["node_2"].unique()))
     nodes = list(nodes)
-    print(f"number of nodes: {len(nodes)}")
     features = np.random.rand(len(nodes), feature_size)
 
     data = HeteroData()
