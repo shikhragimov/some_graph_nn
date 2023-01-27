@@ -1,6 +1,7 @@
 import torch
 import torch_geometric.nn as nn
-
+from temporal_graphs.src.models.layers.functions import pooling
+from temporal_graphs.src.models.layers.descriminator import Discriminator
 
 type_of_conv = {"GCNConv": nn.GCNConv,
                 "SAGEConv": nn.SAGEConv}
@@ -11,6 +12,7 @@ class DMGI(torch.nn.Module):
     Deep Multiplex Graph Infomax like in
         https://github.com/pcy1302/DMGI
         https://arxiv.org/abs/1911.06750
+        http://dsail.kaist.ac.kr/files/AAAI20_slide.pdf
     """
 
     def __init__(
@@ -37,11 +39,11 @@ class DMGI(torch.nn.Module):
         self.convs = torch.nn.ModuleList()
         self.conv_name = conv_name
         self.setup_conv_layers(self.conv_name)
-        self.M = torch.nn.Bilinear(self.out_channels, self.out_channels, 1)  # a trainable scoring matrix
         self.Z = torch.nn.Parameter(
             torch.rand(self.num_nodes, self.out_channels, dtype=torch.float)
         )  # a trainable consensus embedding matrix
         self.alpha = alpha
+        self.discriminator = Discriminator(self.out_channels)
         self.reset_parameters()
 
     def setup_conv_layers(self, conv_name) -> None:
@@ -90,7 +92,7 @@ class DMGI(torch.nn.Module):
             pos_h = DMGI.get_h(conv, pos_h, e_index)
             pos_hs.append(pos_h)
 
-            summaries.append(torch.sigmoid(pos_h.mean(dim=0, keepdim=True)))  # readout
+            summaries.append(pooling(pos_h))  # readout
 
             # corrupted network
             neg_h = torch.nn.functional.dropout(x, p=dropout_probability, training=self.training)
@@ -111,10 +113,7 @@ class DMGI(torch.nn.Module):
         loss_rel = torch.tensor([0.0])  # relation type loss
         for pos_h, neg_h, summary in zip(pos_hs, neg_hs, summaries):  # iterations per relation type
             summary = summary.expand_as(pos_h)
-
-            loss_rel += -torch.log(torch.sigmoid(self.M(pos_h, summary)) + 1e-15).mean()
-            loss_rel += -torch.log(1 - torch.sigmoid(self.M(neg_h, summary)) + 1e-15).mean()
-            break
+            loss_rel = self.descriminator(pos_h, neg_h, summary)
 
         # aggregation
         pos_mean = torch.stack(pos_hs, dim=0).mean(dim=0)
